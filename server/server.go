@@ -24,7 +24,7 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Got HTML:", payload.HTML[:500]) // output
+	fmt.Println("Got HTML:", payload.HTML) // output
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
