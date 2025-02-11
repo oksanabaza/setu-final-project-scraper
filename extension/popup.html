@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>HTML Extractor</title>
+    <script>
+        function extractHTML() {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    function: () => {
+                        chrome.runtime.sendMessage({ action: "sendHTML", data: document.documentElement.outerHTML });
+                    }
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <button onclick="extractHTML()">Get HTML</button>
+</body>
+</html>
