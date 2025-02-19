@@ -9,26 +9,29 @@ import (
 	"strings"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/antchfx/htmlquery" 
+	"github.com/antchfx/htmlquery"
 )
 
 type Payload struct {
-	Links       []string `json:"links"`
-	Element     string   `json:"element"` 
-	IsXPath     bool     `json:"is_xpath"` 
+	Links   []string          `json:"links"`
+	Elements map[string]string `json:"elements"` // Dynamic keys: {"title": "xpath", "price": "css"}
+	IsXPath bool              `json:"is_xpath"`
 }
 
 type ScrapedData struct {
-	URL   string `json:"url"`
-	Title string `json:"title"`
+	URL     string            `json:"url"`
+	Details map[string]string `json:"details"` // Store extracted values dynamically
 }
 
-func scrapeLinks(links []string, element string, isXPath bool) []ScrapedData {
+func scrapeLinks(links []string, elements map[string]string, isXPath bool) []ScrapedData {
 	c := colly.NewCollector()
 	var results []ScrapedData
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
-		var pageTitle string
+		data := ScrapedData{
+			URL:     e.Request.URL.String(),
+			Details: make(map[string]string),
+		}
 
 		htmlContent, err := e.DOM.Html()
 		if err != nil {
@@ -42,20 +45,22 @@ func scrapeLinks(links []string, element string, isXPath bool) []ScrapedData {
 				log.Println("Error parsing HTML:", err)
 				return
 			}
-			// Find the element using XPath
-			nodes := htmlquery.Find(doc, element)
-			for _, node := range nodes {
-				pageTitle = strings.TrimSpace(htmlquery.InnerText(node))
+
+			// Extract values dynamically using XPath
+			for key, selector := range elements {
+				nodes := htmlquery.Find(doc, selector)
+				if len(nodes) > 0 {
+					data.Details[key] = strings.TrimSpace(htmlquery.InnerText(nodes[0]))
+				}
 			}
 		} else {
-			// Use CSS selectors if XPath is not used
-			pageTitle = strings.TrimSpace(e.ChildText(element))
+			// Extract values dynamically using CSS selectors
+			for key, selector := range elements {
+				data.Details[key] = strings.TrimSpace(e.ChildText(selector))
+			}
 		}
 
-		if pageTitle != "" {
-			url := e.Request.URL.String()
-			results = append(results, ScrapedData{URL: url, Title: pageTitle})
-		}
+		results = append(results, data)
 	})
 
 	for _, link := range links {
@@ -78,13 +83,13 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		http.Error(w, "Error in JSON", http.StatusBadRequest)
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	results := scrapeLinks(payload.Links, payload.Element, payload.IsXPath)
+	results := scrapeLinks(payload.Links, payload.Elements, payload.IsXPath)
 
-	// Save the scraped data to a file
+	// Save results to a JSON file
 	file, err := os.Create("scraped_data.json")
 	if err != nil {
 		http.Error(w, "Failed to save data", http.StatusInternalServerError)
@@ -93,7 +98,7 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	json.NewEncoder(file).Encode(results)
 
-	// Send the scraped data back in the response
+	// Send results as response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": "success",
@@ -106,3 +111,24 @@ func main() {
 	fmt.Println("Server started on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+//request to generate json file with all elementes/pathes we want to scrape
+// {
+// 	"links": ["https://example.com/product"],
+// 	"elements": {
+// 	  "title": "//h1[@class='product-title']",
+// 	  "price": "//span[@class='price']",
+// 	  "description": "//div[@class='description']"
+// 	},
+// 	"is_xpath": true
+//   }
+// curl -X POST "http://localhost:8080/collect" \
+//      -H "Content-Type: application/json" \
+//      -d '{
+//        "links": ["https://books.toscrape.com/catalogue/soumission_998/index.html"],
+//        "elements": {
+//          "title": "//h1",
+//          "price": "//p[@class='\''price_color'\'']",
+//          "description": "//p"
+//        },
+//        "is_xpath": true
+//      }'
