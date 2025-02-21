@@ -124,7 +124,7 @@ func main() {
 // curl -X POST "http://localhost:8080/collect" \
 //      -H "Content-Type: application/json" \
 //      -d '{
-//        "links": ["https://books.toscrape.com/catalogue/soumission_998/index.html"],
+//        "links": ["https://books.toscrape.com/catalogue/private-paris-private-10_958/index.html"],
 //        "elements": {
 //          "title": "//h1",
 //          "price": "//p[@class='\''price_color'\'']",
