@@ -1,21 +1,53 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <title>HTML Extractor</title>
-    <script>
-        function extractHTML() {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    function: () => {
-                        chrome.runtime.sendMessage({ action: "sendHTML", data: document.documentElement.outerHTML });
-                    }
-                });
-            });
-        }
-    </script>
+  <title>Scraping Template</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+    }
+
+    input, button {
+      margin: 5px 0;
+    }
+
+    #response-text {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
 </head>
 <body>
-    <button onclick="extractHTML()">Get HTML</button>
+  <h1>Create Scraping Template</h1>
+  
+  <div>
+    <label for="links">URLs (comma-separated):</label>
+    <input type="text" id="links" placeholder="e.g., https://example.com, https://another.com" />
+  </div>
+  
+  <div>
+    <label for="title">Title XPath:</label>
+    <input type="text" id="title" placeholder="e.g., //h1" />
+  </div>
+
+  <div>
+    <label for="price">Price XPath:</label>
+    <input type="text" id="price" placeholder="e.g., //p[@class='price_color']" />
+  </div>
+
+  <div>
+    <label for="description">Description XPath:</label>
+    <input type="text" id="description" placeholder="e.g., //p" />
+  </div>
+  
+  <button id="send-request">Send Request</button>
+  
+  <pre id="response-text"></pre>
+
+  <button id="save-template" style="display:none;">Save Template</button>
+
+  <script src="popup.js"></script>
 </body>
 </html>
