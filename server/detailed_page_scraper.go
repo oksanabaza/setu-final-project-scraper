@@ -1,26 +1,28 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/antchfx/htmlquery"
 )
 
 type Payload struct {
-	Links   []string          `json:"links"`
-	Elements map[string]string `json:"elements"` // Dynamic keys: {"title": "xpath", "price": "css"}
-	IsXPath bool              `json:"is_xpath"`
+	Links    []string          `json:"links"`
+	Elements map[string]string `json:"elements"` 
+	IsXPath  bool              `json:"is_xpath"`
 }
 
 type ScrapedData struct {
 	URL     string            `json:"url"`
-	Details map[string]string `json:"details"` // Store extracted values dynamically
+	Details map[string]string `json:"details"` 
 }
 
 func scrapeLinks(links []string, elements map[string]string, isXPath bool) []ScrapedData {
@@ -74,6 +76,51 @@ func scrapeLinks(links []string, elements map[string]string, isXPath bool) []Scr
 	return results
 }
 
+func saveToCSV(results []ScrapedData) {
+	// Create unique filename based on current date and time
+	currentTime := time.Now().Format("2006-01-02_15-04-05")
+	fileName := fmt.Sprintf("scraped_data_%s.csv", currentTime)
+
+	// Create CSV file
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Println("Error creating CSV file:", err)
+		return
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Prepare CSV headers (from the first result)
+	if len(results) == 0 {
+		log.Println("No data to write")
+		return
+	}
+
+	// Extract the keys (column headers) from the first result
+	headers := []string{"URL"}
+	for key := range results[0].Details {
+		headers = append(headers, key)
+	}
+
+	// Write the header row
+	writer.Write(headers)
+
+	// Write data rows
+	for _, result := range results {
+		// Prepare the row data
+		row := []string{result.URL}
+		for _, key := range headers[1:] {
+			// Trim spaces for each field to avoid extra spaces in the output
+			row = append(row, strings.TrimSpace(result.Details[key]))
+		}
+		writer.Write(row)
+	}
+
+	fmt.Println("Scraped data saved to", fileName)
+}
+
 func collectHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST supported", http.StatusMethodNotAllowed)
@@ -89,14 +136,8 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 
 	results := scrapeLinks(payload.Links, payload.Elements, payload.IsXPath)
 
-	// Save results to a JSON file
-	file, err := os.Create("scraped_data.json")
-	if err != nil {
-		http.Error(w, "Failed to save data", http.StatusInternalServerError)
-		return
-	}
-	defer file.Close()
-	json.NewEncoder(file).Encode(results)
+	// Save results to CSV with a unique filename
+	saveToCSV(results)
 
 	// Send results as response
 	w.Header().Set("Content-Type", "application/json")
@@ -111,6 +152,7 @@ func main() {
 	fmt.Println("Server started on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
 //request to generate json file with all elementes/pathes we want to scrape
 // {
 // 	"links": ["https://example.com/product"],
@@ -121,10 +163,11 @@ func main() {
 // 	},
 // 	"is_xpath": true
 //   }
+
 // curl -X POST "http://localhost:8080/collect" \
 //      -H "Content-Type: application/json" \
 //      -d '{
-//        "links": ["https://books.toscrape.com/catalogue/private-paris-private-10_958/index.html"],
+//        "links": ["https://books.toscrape.com/catalogue/private-paris-private-10_958/index.html","https://books.toscrape.com/catalogue/soumission_998/index.html"],
 //        "elements": {
 //          "title": "//h1",
 //          "price": "//p[@class='\''price_color'\'']",
@@ -132,3 +175,13 @@ func main() {
 //        },
 //        "is_xpath": true
 //      }'
+
+// curl -X POST "http://localhost:8080/collect" \
+//    -H "Content-Type: application/json" \
+//    -d '{
+//     "links": ["https://www.bookstation.ie/product/wrong-women-selling-sex-in-monto-dublins-forgotten-red-light-district/","https://www.bookstation.ie/product/onyx-storm-discover-the-follow-up-to-the-global-phenom/"],
+//     "elements": {
+//      "title": "//div[contains(@class, \"product\")]//h1"
+//     },
+//     "is_xpath": true
+//    }'

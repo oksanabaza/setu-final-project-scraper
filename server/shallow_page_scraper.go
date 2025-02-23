@@ -1,120 +1,168 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/antchfx/htmlquery"
 )
 
-type Payload struct {
-	CategoryURL string            `json:"category_url"`
-	Selectors   map[string]string `json:"selectors"`  // Dynamic key-value pairs for selectors
-	IsXPath     bool              `json:"is_xpath"`   // Determines if selectors are XPath
+// RequestBody defines the expected JSON structure
+type RequestBody struct {
+	Links    []string          `json:"links"`
+	Elements map[string]string `json:"elements"`
+	Wrapper  string            `json:"wrapper"`  
+	IsXPath  bool              `json:"is_xpath"`
 }
 
-func scrapeCategoryWithPagination(categoryURL string, selectors map[string]string, isXPath bool) []map[string]string {
+// ResponseData defines the JSON response structure
+type ResponseData struct {
+	URL   string            `json:"url"`
+	Data  map[string]string `json:"data"`
+	Error string            `json:"error,omitempty"`
+}
+
+// Handles the POST request
+func scrapeHandler(w http.ResponseWriter, r *http.Request) {
+	// Decode JSON request
+	var req RequestBody
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		return
+	}
+
+	// Initialise colly collector
 	c := colly.NewCollector()
-	var products []map[string]string
+	var results []ResponseData
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 
-	// Function to extract data dynamically
-	extractData := func(e *colly.HTMLElement, htmlContent string) map[string]string {
-		product := make(map[string]string)
-		doc, _ := htmlquery.Parse(strings.NewReader(htmlContent))
+	// Process each link
+	for _, url := range req.Links {
+		wg.Add(1) // Increment waitgroup counter for each URL
+		go func(url string) {
+			defer wg.Done() // Decrement counter when scraping is done
 
-		for key, selector := range selectors {
-			var value string
+			var productResults []map[string]string
+			var scrapeErr error
 
-			if isXPath {
-				nodes := htmlquery.Find(doc, selector)
-				if len(nodes) > 0 {
-					value = strings.TrimSpace(htmlquery.InnerText(nodes[0]))
+			// Scraping logic
+			c.OnHTML(req.Wrapper, func(e *colly.HTMLElement) {
+				data := make(map[string]string)
+				for key, selector := range req.Elements {
+					if req.IsXPath {
+						data[key] = "XPath support not implemented yet"
+					} else {
+						data[key] = e.ChildText(selector)
+					}
 				}
-			} else {
-				value = strings.TrimSpace(e.ChildText(selector))
+				productResults = append(productResults, data)
+			})
+
+			err := c.Visit(url)
+			if err != nil {
+				scrapeErr = err
 			}
 
-			product[key] = value
-		}
-
-		// Store absolute URL
-		product["url"] = e.Request.URL.String()
-		return product
+			// Store results after scraping completes
+			mu.Lock() // Lock access to shared resource
+			for _, product := range productResults {
+				response := ResponseData{
+					URL:  url,
+					Data: product,
+				}
+				if scrapeErr != nil {
+					response.Error = scrapeErr.Error()
+				}
+				results = append(results, response)
+			}
+			mu.Unlock()
+		}(url)
 	}
 
-	// Extract product details from each item
-	c.OnHTML(".product_pod", func(e *colly.HTMLElement) {
-		htmlContent, _ := e.DOM.Html()
-		products = append(products, extractData(e, htmlContent))
-	})
+	// Wait for all goroutines to finish
+	wg.Wait()
 
-	// Handle pagination (Next button)
-	c.OnHTML(".pagenav", func(e *colly.HTMLElement) {
-		nextPageURL := e.Request.AbsoluteURL(e.Attr("href"))
-		fmt.Println("Next page found:", nextPageURL)
-		c.Visit(nextPageURL)
-	})
+	// Save data to CSV after scraping completes
+	saveToCSV(results)
 
-	err := c.Visit(categoryURL)
-	if err != nil {
-		log.Println("Error visiting category page:", err)
-	}
-
-	return products
+	// Convert response to JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }
 
-func categoryHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST supported", http.StatusMethodNotAllowed)
-		return
-	}
+// Saves scraped data to a CSV file
+func saveToCSV(results []ResponseData) {
+	// Create filename with timestamp
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	filename := fmt.Sprintf("scraped_data_%s.csv", timestamp)
 
-	var payload Payload
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	// Create CSV file
+	file, err := os.Create(filename)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	products := scrapeCategoryWithPagination(payload.CategoryURL, payload.Selectors, payload.IsXPath)
-
-	// Save to file
-	file, err := os.Create("category_products.json")
-	if err != nil {
-		http.Error(w, "Failed to save data", http.StatusInternalServerError)
+		log.Println("Error creating CSV file:", err)
 		return
 	}
 	defer file.Close()
-	json.NewEncoder(file).Encode(products)
 
-	// Send response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status": "success",
-		"data":   products,
-	})
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write CSV header
+	headers := []string{"URL", "price", "availability", "title"}
+	writer.Write(headers)
+
+	// Write data rows
+	for _, result := range results {
+		// Prepare the row data
+		row := []string{result.URL}
+		for _, key := range headers[1:] {
+			// Trim spaces for each field to avoid extra spaces in the output
+			row = append(row, strings.TrimSpace(result.Data[key]))
+		}
+		writer.Write(row)
+	}
+
+	fmt.Println("Scraped data saved to", filename)
 }
 
 func main() {
-	http.HandleFunc("/category", categoryHandler)
-	fmt.Println("Server started on port 8080")
+	// Start HTTP server
+	http.HandleFunc("/collect", scrapeHandler)
+	fmt.Println("Server running on port 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 
-// curl -X POST "http://localhost:8080/category" \
-//      -H "Content-Type: application/json" \
-//      -d '{
-//        "category_url": "https://books.toscrape.com/catalogue/category/books/science_22/index.html",
-//        "selectors": {
+// curl -X POST "http://localhost:8080/collect" \
+//    -H "Content-Type: application/json" \
+//    -d '{
+//     "links": ["https://www.bookstation.ie/product-category/books/just-released/"],
+//     "elements": {
+//      "title": "h2 a",
+//      "price": ".woocommerce-Price-amount"
+//     },
+//     "wrapper": ".product",
+//     "is_xpath": false
+//    }'
+
+// curl -X POST "http://localhost:8080/collect" \
+//    -H "Content-Type: application/json" \
+//    -d '{
+//     "links": ["https://books.toscrape.com/catalogue/category/books/science_22/index.html"],
+//     "elements": {
 //          "title": "h3 a",
 //          "price": ".price_color",
 //          "availability": ".instock.availability"
-//        },
-//        "is_xpath": false
-//      }'
+//     },
+//     "wrapper": ".product_pod",
+//     "is_xpath": false
+//    }'
+
