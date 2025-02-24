@@ -18,7 +18,7 @@ import (
 type RequestBody struct {
 	Links    []string          `json:"links"`
 	Elements map[string]string `json:"elements"`
-	Wrapper  string            `json:"wrapper"`  
+	Wrapper  string            `json:"wrapper"`
 	IsXPath  bool              `json:"is_xpath"`
 }
 
@@ -140,7 +140,6 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-
 // curl -X POST "http://localhost:8080/collect" \
 //    -H "Content-Type: application/json" \
 //    -d '{
@@ -165,4 +164,3 @@ func main() {
 //     "wrapper": ".product_pod",
 //     "is_xpath": false
 //    }'
-

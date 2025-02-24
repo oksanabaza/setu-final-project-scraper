@@ -1,52 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scraping Template</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
+      padding: 20px;
     }
 
-    input, button {
-      margin: 5px 0;
+    .container {
+      max-width: 400px;
     }
 
-    #response-text {
-      margin-top: 20px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1>Create Scraping Template</h1>
-  
-  <div>
-    <label for="links">URLs (comma-separated):</label>
-    <input type="text" id="links" placeholder="e.g., https://example.com, https://another.com" />
-  </div>
-  
-  <div>
-    <label for="title">Title XPath:</label>
-    <input type="text" id="title" placeholder="e.g., //h1" />
-  </div>
+  <div class="container">
+    <h4>Scraping Template</h4>
 
-  <div>
-    <label for="price">Price XPath:</label>
-    <input type="text" id="price" placeholder="e.g., //p[@class='price_color']" />
-  </div>
+    <div class="input-field">
+      <input type="text" id="links">
+      <label for="links">URLs (comma-separated)</label>
+    </div>
 
-  <div>
-    <label for="description">Description XPath:</label>
-    <input type="text" id="description" placeholder="e.g., //p" />
-  </div>
-  
-  <button id="send-request">Send Request</button>
-  
-  <pre id="response-text"></pre>
+    <div class="input-field">
+      <input type="text" id="title">
+      <label for="title">Title XPath</label>
+    </div>
 
-  <button id="save-template" style="display:none;">Save Template</button>
+    <div class="input-field">
+      <input type="text" id="price">
+      <label for="price">Price XPath</label>
+    </div>
+
+    <div class="input-field">
+      <input type="text" id="description">
+      <label for="description">Description XPath</label>
+    </div>
+
+    <button class="btn waves-effect waves-light" id="send-request">Send Request</button>
+    <button class="btn red waves-effect waves-light hidden" id="close-window">Close</button>
+
+    <pre id="response-text"></pre>
+  </div>
 
   <script src="popup.js"></script>
 </body>

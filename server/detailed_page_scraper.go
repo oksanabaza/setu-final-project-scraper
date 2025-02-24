@@ -10,19 +10,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocolly/colly/v2"
 	"github.com/antchfx/htmlquery"
+	"github.com/gocolly/colly/v2"
 )
 
 type Payload struct {
 	Links    []string          `json:"links"`
-	Elements map[string]string `json:"elements"` 
+	Elements map[string]string `json:"elements"`
 	IsXPath  bool              `json:"is_xpath"`
 }
 
 type ScrapedData struct {
 	URL     string            `json:"url"`
-	Details map[string]string `json:"details"` 
+	Details map[string]string `json:"details"`
 }
 
 func scrapeLinks(links []string, elements map[string]string, isXPath bool) []ScrapedData {
@@ -92,13 +92,13 @@ func saveToCSV(results []ScrapedData) {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	// Prepare CSV headers (from the first result)
+	// Prepare CSV headers
 	if len(results) == 0 {
 		log.Println("No data to write")
 		return
 	}
 
-	// Extract the keys (column headers) from the first result
+	// Extract the keys from the first result
 	headers := []string{"URL"}
 	for key := range results[0].Details {
 		headers = append(headers, key)
