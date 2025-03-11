@@ -9,6 +9,11 @@
     body { font-family: Arial, sans-serif; padding: 20px; width: 360px; }
     .container { max-width: 360px; }
     .hidden { display: none; }
+    #websites-dropdown {
+    display: block;
+    width: 100%;
+    margin-top: 10px; 
+}
   </style>
 </head>
 <body>
@@ -29,33 +34,78 @@
 
     <!-- SCRAPING FORM (Hidden until login) -->
     <div id="scraping-section" class="hidden">
-      <div>testik</div>
-      <div>
-        <label for="websites-dropdown">Select a Website</label>
-        <ul id="websites-dropdown" class="collection"></ul>
+      <button class="btn waves-effect waves-light" id="new-btn">New</button>
+        <!-- Table for future templates -->
+  <table class="striped" id='table' class="hidden">
+    <thead>
+      <tr>
+        <th>Template Name</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="templates-table-body">
+      <!-- Mock Data -->
+      <tr>
+        <td>Template 1</td>
+        <td><button class="btn red btn-small edit-btn">Edit</button></td>
+        <td><button class="btn red btn-small delete-btn">Delete</button></td>
+      </tr>
+      <tr>
+        <td>Template 2</td>
+        <td><button class="btn red btn-small edit-btn">Edit</button></td>
+        <td><button class="btn red btn-small delete-btn">Delete</button></td>
+      </tr>
+    </tbody>
+  </table>
+      <!-- Rest of the form, hidden initially -->
+      <div id="scraping-form" class="hidden">
+        <button class="btn waves-effect waves-light" id="back-btn">Back</button>
+        <!-- Add Template Name Input -->
+<div class="input-field">
+  <input type="text" id="template-name">
+  <label for="template-name">Template Name</label>
+</div>
+
+<!-- Add Radio Buttons for Detailed or Shallow -->
+<div>
+  <label>
+    <input type="radio" name="scraping-level" id="detailed" value="detailed" />
+    <span>Detailed</span>
+  </label>
+</div>
+<div>
+  <label>
+    <input type="radio" name="scraping-level" id="shallow" value="shallow" />
+    <span>Shallow</span>
+  </label>
+</div>
+          <div>
+              <select id="websites-dropdown" class="collection"></select>
+          </div>
+          <div class="input-field">
+              <input type="text" id="links">
+              <label for="links">URLs (comma-separated)</label>
+          </div>
+          <div class="input-field">
+              <input type="text" id="title">
+              <label for="title">Title XPath</label>
+          </div>
+          <div class="input-field">
+              <input type="text" id="price">
+              <label for="price">Price XPath</label>
+          </div>
+          <div class="input-field">
+              <input type="text" id="description">
+              <label for="description">Description XPath</label>
+          </div>
+          <button class="btn waves-effect waves-light" id="send-request">Send Request here</button>
+          <button class="btn red waves-effect waves-light hidden" id="close-window">Close oksi</button>
+          <button type="button" id="save-template" class="btn btn-primary">Save Template</button>
+
+          <pre id="response-text"></pre>
       </div>
-      <h4>Scraping Template</h4>
-      <div>testik2</div>
-      <div class="input-field">
-        <input type="text" id="links">
-        <label for="links">URLs (comma-separated)</label>
-      </div>
-      <div class="input-field">
-        <input type="text" id="title">
-        <label for="title">Title XPath</label>
-      </div>
-      <div class="input-field">
-        <input type="text" id="price">
-        <label for="price">Price XPath</label>
-      </div>
-      <div class="input-field">
-        <input type="text" id="description">
-        <label for="description">Description XPath</label>
-      </div>
-      <button class="btn waves-effect waves-light" id="send-request">Send Request here</button>
-      <button class="btn red waves-effect waves-light hidden" id="close-window">Close oksi</button>
-      <pre id="response-text"></pre>
-    </div>
+  </div>
+  
   </div>
 
   <script src="popup.js"></script>
