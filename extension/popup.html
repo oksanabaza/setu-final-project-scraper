@@ -3,52 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scraping Template</title>
+  <title>Scraping Tool</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-  
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 400px;
-    }
-
-    .hidden {
-      display: none;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; width: 360px; }
+    .container { max-width: 360px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h4>Scraping Template</h4>
-
-    <div class="input-field">
-      <input type="text" id="links">
-      <label for="links">URLs (comma-separated)</label>
+    <!-- LOGIN FORM -->
+    <div id="login-section">
+      <h4>Login from popup</h4>
+      <div class="input-field">
+        <input type="text" id="email">
+        <label for="email">Email</label>
+      </div>
+      <div class="input-field">
+        <input type="password" id="password">
+        <label for="password">Password</label>
+      </div>
+      <button class="btn waves-effect waves-light" id="login-btn">Login</button>
     </div>
 
-    <div class="input-field">
-      <input type="text" id="title">
-      <label for="title">Title XPath</label>
+    <!-- SCRAPING FORM (Hidden until login) -->
+    <div id="scraping-section" class="hidden">
+      <h4>Scraping Template</h4>
+      <div class="input-field">
+        <input type="text" id="links">
+        <label for="links">URLs (comma-separated)</label>
+      </div>
+      <div class="input-field">
+        <input type="text" id="title">
+        <label for="title">Title XPath</label>
+      </div>
+      <div class="input-field">
+        <input type="text" id="price">
+        <label for="price">Price XPath</label>
+      </div>
+      <div class="input-field">
+        <input type="text" id="description">
+        <label for="description">Description XPath</label>
+      </div>
+      <button class="btn waves-effect waves-light" id="send-request">Send Request here</button>
+      <button class="btn red waves-effect waves-light hidden" id="close-window">Close oksi</button>
+      <pre id="response-text"></pre>
     </div>
-
-    <div class="input-field">
-      <input type="text" id="price">
-      <label for="price">Price XPath</label>
-    </div>
-
-    <div class="input-field">
-      <input type="text" id="description">
-      <label for="description">Description XPath</label>
-    </div>
-
-    <button class="btn waves-effect waves-light" id="send-request">Send Request</button>
-    <button class="btn red waves-effect waves-light hidden" id="close-window">Close</button>
-
-    <pre id="response-text"></pre>
   </div>
 
   <script src="popup.js"></script>
