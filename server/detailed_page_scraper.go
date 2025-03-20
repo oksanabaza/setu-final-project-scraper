@@ -149,8 +149,8 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/collect", collectHandler)
-	fmt.Println("Server started on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("Server started on port 8081")
+	log.Fatal(http.ListenAndServe(":8081", nil))
 }
 
 //request to generate json file with all elementes/pathes we want to scrape
