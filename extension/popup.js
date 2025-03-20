@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
     chrome.storage.local.get("isLoggedIn", function (data) {
         if (data.isLoggedIn) {
             showScrapingForm();
-            fetchWebsites(data.token);
+            fetchWebsites(data.token);  // Pass the token to fetch websites
         }
     });
 
@@ -132,7 +132,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const titleXPath = document.getElementById("title").value.trim();
         const priceXPath = document.getElementById("price").value.trim();
         const descriptionXPath = document.getElementById("description").value.trim();
-
+    
+        const scrapeType = document.querySelector('input[name="scraping-level"]:checked').value;
+    
         const templateData = {
             links: links,
             elements: {
@@ -140,14 +142,29 @@ document.addEventListener("DOMContentLoaded", function () {
                 "price": priceXPath,
                 "description": descriptionXPath
             },
-            is_xpath: true
+            is_xpath: true,
+            type: scrapeType
         };
-
-        fetch('http://localhost:8081/collect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(templateData)
-        })
+    
+        // Retrieve the token from chrome.storage.local
+        chrome.storage.local.get('token', function(result) {
+            const token = result.token; // Assuming your token is stored under the key 'token'
+    
+            // Check if the token exists before sending the request
+            if (!token) {
+                console.error('No token found! Please log in first.');
+                return;
+            }
+    
+            // Send the request with the token in the Authorization header
+            fetch('http://localhost:8080/scrape', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`  // Add the token here
+                },
+                body: JSON.stringify(templateData)
+            })
             .then(response => response.json())
             .then(data => {
                 document.getElementById("response-text").textContent = JSON.stringify(data, null, 2);
@@ -158,7 +175,12 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch((error) => {
                 console.error('Error:', error);
             });
+        });
     });
+    
+    
+    
+    
 
     document.getElementById("close-window").addEventListener("click", function () {
         chrome.windows.getCurrent(function (window) {
@@ -173,7 +195,6 @@ document.addEventListener("DOMContentLoaded", function () {
         newBtn.classList.remove("hidden");
         table.classList.remove("hidden");
     });
-
 
     document.getElementById("save-template").addEventListener("click", function () {
         const templateName = document.getElementById("template-name").value.trim();
@@ -231,6 +252,4 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         });
     });
-    
- 
 });
