@@ -47,7 +47,7 @@ const Popup = () => {
 
   const fetchTemplates = async (token) => {
     try {
-      const response = await fetch("http://localhost:8080/templates", {
+      const response = await fetch("https://setu-final-project.onrender.com/templates", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -65,7 +65,7 @@ const Popup = () => {
   };
   const handleDelete = async (id) => {
     try {
-      await fetch(`http://localhost:8080/templates/${id}`, { method: "DELETE" });
+      await fetch(`https://setu-final-project.onrender.com/templates/${id}`, { method: "DELETE" });
       setTemplates(templates.filter((template) => template.id !== id));
     } catch (error) {
       console.error("Error deleting template:", error);
@@ -81,7 +81,7 @@ const Popup = () => {
 
   const fetchWebsites = async (token) => {
     try {
-      const response = await fetch("http://localhost:8080/websites", {
+      const response = await fetch("https://setu-final-project.onrender.com/websites", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -150,7 +150,7 @@ const Popup = () => {
           created_at: new Date().toISOString(),
         };
   
-        const response = await fetch("http://localhost:8080/templates/create", {
+        const response = await fetch("https://setu-final-project.onrender.com/templates/create", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -199,7 +199,7 @@ const Popup = () => {
         wrapper: wrapper,
       };
   
-      const response = await fetch("http://localhost:8080/scrape", {
+      const response = await fetch("https://setu-final-project.onrender.com/scrape", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

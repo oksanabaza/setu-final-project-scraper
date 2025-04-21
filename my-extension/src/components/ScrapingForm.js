@@ -6,7 +6,7 @@ const ScrapingForm = ({ token }) => {
 
   const handleScrape = async () => {
     try {
-      const response = await fetch('http://localhost:8080/scrape', {
+      const response = await fetch('https://setu-final-project.onrender.com/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

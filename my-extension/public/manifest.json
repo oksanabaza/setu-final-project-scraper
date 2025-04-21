@@ -6,7 +6,7 @@
     "storage",
     "activeTab",
     "scripting",
-    "http://localhost:8080/*"
+    "https://setu-final-project.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js"
